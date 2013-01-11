@@ -3,10 +3,11 @@ import sys
 from .dist import Distribution
 from .upload import Uploader
 from .exceptions import InvalidDistribution
+from .status import NothingReporter
 
 class Sync(object):
 
-    def __init__(self, source, destination, exclude=[], include=[], tmp_dir='/tmp'):
+    def __init__(self, source, destination, exclude=[], include=[], tmp_dir='/tmp', ui=NothingReporter()):
         """ By default looks for an exclude blacklist, but if the include kwarg
         is passed then whitelist mode is enabled and we only download those
         packages """
@@ -15,6 +16,7 @@ class Sync(object):
         self.exclude = exclude
         self.include = include
         self.tmp_dir = tmp_dir
+        self.ui = ui
 
     def _package_list(self):
         if self.include:
@@ -23,7 +25,7 @@ class Sync(object):
             return [p for p in self.source.package_names() if not p in self.exclude]
 
     def _cleanup(self, path):
-        print 'cleaning up... ',
+        self.ui.inline('cleaning up...')
         try:
             os.unlink(path)
             return True
@@ -50,27 +52,26 @@ class Sync(object):
 
     def sync(self):
         for package_name in self._package_list():
-            self.status('Checking required versions for %s...' % package_name)
+            self.ui.report('Checking required versions for %s...' % package_name)
             versions = list(self.required_versions(package_name))
             if not versions:
-                self.status('up to date.', newline=True)
+                self.ui.inline('up to date.')
                 continue
-            self.status('%s required' % ', '.join([v.version for v in versions]), newline=True)
+            self.ui.inline('%s required' % ', '.join([v.version for v in versions]))
             for version in self.required_versions(package_name):
-                self.status('  version %s: ' % version.version)
-                self.status('fetching... ')
+                self.ui.report('version %s:' % version.version, level=1)
+                self.ui.inline('fetching...')
                 downloaded_dist = self.source.fetch(version, save_to=self.tmp_dir)
                 try:
                     distribution = Distribution(downloaded_dist)
                     uploader = Uploader(self.destination, distribution)
-                    self.status('registering... ')
+                    self.ui.inline('registering...')
                     uploader.register()
-                    self.status('uploading... ')
+                    self.ui.inline('uploading...')
                     uploader.upload()
                 except InvalidDistribution, e:
-                    print >>sys.stderr, '\n  ERROR: Cannot parse metadata from %s' % e.args[0]
+                    self.ui.error('ERROR: Cannot parse metadata from %s' % e.args[0])
 
                 cleaned = self._cleanup(downloaded_dist)
                 if not cleaned:
-                    self.status('cannot remove %s ' % downloaded_dist)
-                self.status('', newline=True)
+                    self.ui.inline('cannot remove %s ' % downloaded_dist)

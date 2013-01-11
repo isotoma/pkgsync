@@ -3,6 +3,7 @@ import logging
 import sys
 from .sync import Sync
 from .repo import Repository
+from .status import StatusReporter
 
 from optparse import OptionParser
 
@@ -76,11 +77,13 @@ def main():
     source = configure_repository(options.source_url, options.source_username, options.source_password)
     destination = configure_repository(options.destination_url, options.destination_username, options.destination_password)
 
+    ui = StatusReporter()
+
     if options.all_packages:
-        print 'Synchronising all packages...'
-        sync = Sync(source, destination)
+        ui.report('Synchronising all packages...')
+        sync = Sync(source, destination, ui=ui)
     else:
-        print 'Synchronising packages: %r...' % args
-        sync = Sync(source, destination, include=args)
+        ui.report('Synchronising packages: %r...' % args)
+        sync = Sync(source, destination, ui=ui, include=args)
 
     sync.sync()
