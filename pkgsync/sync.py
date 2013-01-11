@@ -2,6 +2,7 @@ import os
 import sys
 from .dist import Distribution
 from .upload import Uploader
+from .exceptions import InvalidDistribution
 
 class Sync(object):
 
@@ -21,12 +22,20 @@ class Sync(object):
         else:
             return [p for p in self.source.package_names() if not p in self.exclude]
 
-    def _cleanup(self, distribution):
+    def _cleanup(self, path):
+        print 'cleaning up... ',
         try:
-            os.unlink(distribution.path)
+            os.unlink(path)
             return True
         except OSError, IOError:
             return False
+
+    def status(self, message, newline=None):
+        if newline:
+            print message
+        else:
+            print message,
+        sys.stdout.flush()
 
     def required_versions(self, package_name):
         source_versions = self.source.download_links(package_name)
@@ -41,25 +50,27 @@ class Sync(object):
 
     def sync(self):
         for package_name in self._package_list():
-            print 'Checking required versions for %s...' % package_name,
+            self.status('Checking required versions for %s...' % package_name)
             versions = list(self.required_versions(package_name))
             if not versions:
-                print 'up to date.'
+                self.status('up to date.', newline=True)
                 continue
-            print '%s required' % ', '.join([v.version for v in versions])
+            self.status('%s required' % ', '.join([v.version for v in versions]), newline=True)
             for version in self.required_versions(package_name):
-                print '  fetching version %s...' % version.version,
+                self.status('  version %s: ' % version.version)
+                self.status('fetching... ')
                 downloaded_dist = self.source.fetch(version, save_to=self.tmp_dir)
-                print 'done.'
-                self.distribution = Distribution(downloaded_dist)
-                uploader = Uploader(self.destination, self.distribution)
-                print '  registering version %s...' % version.version,
-                uploader.register()
-                print 'done.'
-                print '  uploading version %s...' % version.version,
-                uploader.upload()
-                print 'done.'
-                print '  cleaning up...',
-                self._cleanup(self.distribution)
-                print 'done.'
-                print '  --'
+                try:
+                    distribution = Distribution(downloaded_dist)
+                    uploader = Uploader(self.destination, distribution)
+                    self.status('registering... ')
+                    uploader.register()
+                    self.status('uploading... ')
+                    uploader.upload()
+                except InvalidDistribution, e:
+                    print >>sys.stderr, '\n  ERROR: Cannot parse metadata from %s' % e.args[0]
+
+                cleaned = self._cleanup(downloaded_dist)
+                if not cleaned:
+                    self.status('cannot remove %s ' % downloaded_dist)
+                self.status('', newline=True)
