@@ -1,0 +1,2 @@
+class InvalidDistribution(Exception):
+    pass

@@ -1,6 +1,8 @@
 import re
 import pkginfo
 
+from .exceptions import InvalidDistribution
+
 class Metadata(object):
 
     def __init__(self, dist):
@@ -18,6 +20,9 @@ class Metadata(object):
     def _introspect(self):
         """ Get the pkginfo metadata and monkeypatch where required """
         metadata = pkginfo.get_metadata(self.dist.path)
+        if not metadata:
+            raise InvalidDistribution(self.dist.path)
+
         metadata_full = metadata.read()
         if metadata.classifiers == () and 'Classifier' in metadata_full:
             metadata.classifiers = self._parse_classifiers(metadata_full)
