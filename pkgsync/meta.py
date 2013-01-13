@@ -36,14 +36,12 @@ class Metadata(object):
 
     def upload(self):
         """ Build a dictionary suitable for a distutils upload request """
-        metadata = self._introspect()
-
         return {
             ':action': 'file_upload',
             'protocol_version': '1',
-            'name': metadata.name,
-            'version': metadata.version,
-            'filetype': metadata.__class__.__name__.lower(),
+            'name': self._meta.name,
+            'version': self._meta.version,
+            'filetype': self._meta.__class__.__name__.lower(),
             'pyversion': '',
             'md5_digest': self.dist.md5_digest,
             'content': (self.dist.basename, self.dist.content),
@@ -51,24 +49,22 @@ class Metadata(object):
 
     def register(self):
         """ Build a dictionary suitable for a distutils register request """
-        meta = self._introspect()
-
         return {
             ':action': 'submit',
-            'metadata_version' : meta.metadata_version,
-            'name': meta.name or 'UNKNOWN',
-            'version': meta.version or '0.0.0',
-            'summary': meta.summary or 'UNKNOWN',
-            'home_page': meta.home_page or 'UNKNOWN',
-            'author': meta.author or 'UNKNOWN',
-            'author_email': meta.author_email or 'UNKNOWN',
-            'license': meta.license or 'UNKNOWN',
-            'description': meta.description or 'UNKNOWN',
-            'keywords': meta.keywords or [],
-            'platform': meta.platforms,
-            'classifiers': meta.classifiers,
-            'download_url': meta.download_url or 'UNKNOWN',
-            'provides': meta.provides,
-            'requires': meta.requires,
-            'obsoletes': meta.obsoletes,
+            'metadata_version' : self._meta.metadata_version,
+            'name': self._meta.name or 'UNKNOWN',
+            'version': self._meta.version or '0.0.0',
+            'summary': self._meta.summary or 'UNKNOWN',
+            'home_page': self._meta.home_page or 'UNKNOWN',
+            'author': self._meta.author or 'UNKNOWN',
+            'author_email': self._meta.author_email or 'UNKNOWN',
+            'license': self._meta.license or 'UNKNOWN',
+            'description': self._meta.description or 'UNKNOWN',
+            'keywords': self._meta.keywords or [],
+            'platform': self._meta.platforms,
+            'classifiers': self._meta.classifiers,
+            'download_url': self._meta.download_url or 'UNKNOWN',
+            'provides': self._meta.provides,
+            'requires': self._meta.requires,
+            'obsoletes': self._meta.obsoletes,
         }
