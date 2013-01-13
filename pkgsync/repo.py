@@ -19,8 +19,6 @@ class IteratingMd5Checker(object):
 
     def check(self):
         digest = self._digest()
-        if not digest == self.against:
-            print >>sys.stderr, 'DIGEST: %s\nSHOULD: %s' % (digest, self.against)
         return digest == self.against
 
     def _digest(self):
