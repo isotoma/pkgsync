@@ -56,10 +56,12 @@ def parse_options():
     required = ('destination_url', 'destination_username')
     for r in required:
         if not hasattr(options, r):
+            parser.print_help()
             raise SystemExit('You must provide a destination url, and a destination username')
 
     if not options.all_packages:
         if not len(args):
+            parser.print_help()
             raise SystemExit('You must either specify --all or specify individual package names')
 
     return options, args
