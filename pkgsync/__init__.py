@@ -4,6 +4,7 @@ import sys
 from .sync import Sync
 from .repo import Repository
 from .status import StatusReporter
+from .util import dictify_package_list
 
 from optparse import OptionParser
 
@@ -83,9 +84,12 @@ def main():
 
     if options.all_packages:
         ui.report('Synchronising all packages...')
-        sync = Sync(source, destination, ui=ui)
     else:
         ui.report('Synchronising packages: %r...' % args)
-        sync = Sync(source, destination, ui=ui, include=args)
 
+    sync = Sync(
+        source, destination, ui=ui,
+        exclude=dictify_package_list(options.exclude),
+        include=dictify_package_list(args),
+    )
     sync.sync()
