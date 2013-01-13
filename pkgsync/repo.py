@@ -46,6 +46,8 @@ class Repository(object):
         if self.authentication:
             kwargs.setdefault('auth', self._auth)
         response = requests.get(url, **kwargs)
+        if response.status_code == 401:
+            raise RuntimeError('Incorrect username/password for %s' % url)
         return response
 
     @property
@@ -90,8 +92,6 @@ class Repository(object):
         request = self.get(self._package_index(package_name))
         if request.status_code == 404:
             raise StopIteration()
-        if request.status_code == 401:
-            raise RuntimeError('Incorrect username/password for %s' % request.request.url)
         dom = parseString(request.content)
         for link in dom.getElementsByTagName('a'):
             basename = link.firstChild.data
