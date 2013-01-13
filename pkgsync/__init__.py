@@ -10,11 +10,9 @@ from optparse import OptionParser
 
 def parse_options():
     parser = OptionParser(
-        usage='%prog --source-url=http://pypi.python.org ' \
-              '--destination-url=https://eggsample.com ' \
+        usage='%prog --destination-url=https://eggsample.com ' \
               '--destination-username=youruser ' \
-              '--destination-password=yourpassword ' \
-              '[packagename anotherpackagename yetanother|--all]'
+              '[package another==1.2 another==2.3|--all]'
     )
     parser.add_option(
         '-a', '--all-packages', dest='all_packages', action='store_true',
