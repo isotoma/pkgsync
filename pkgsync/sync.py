@@ -32,13 +32,6 @@ class Sync(object):
         except OSError, IOError:
             return False
 
-    def status(self, message, newline=None):
-        if newline:
-            print message
-        else:
-            print message,
-        sys.stdout.flush()
-
     def required_versions(self, package_name):
         source_versions = self.source.download_links(package_name)
         destination_versions = list(self.destination.download_links(package_name))
