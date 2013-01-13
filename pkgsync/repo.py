@@ -9,25 +9,9 @@ from collections import namedtuple
 
 import requests
 
+from .digest import IteratingMd5Checker
+
 DistributionLink = namedtuple('DistributionLink', ['url', 'md5_digest', 'version', 'basename'])
-
-class IteratingMd5Checker(object):
-
-    def __init__(self, path, against):
-        self.path = path
-        self.against = against
-
-    def check(self):
-        digest = self._digest()
-        return digest == self.against
-
-    def _digest(self):
-        md5 = hashlib.md5()
-        with open(self.path,'rb') as f: 
-            for chunk in iter(lambda: f.read(128*md5.block_size), b''): 
-                md5.update(chunk)
-        return md5.hexdigest()
-
 
 class Repository(object):
 
@@ -84,11 +68,11 @@ class Repository(object):
         f.close()
 
         if md5_check:
-            assert IteratingMd5Checker(where, md5_check).check()
+            IteratingMd5Checker(where, md5_check).check()
 
         return where
 
-    def download_links(self, package_name):
+    def download_links(self, package_name, versions=()):
         request = self.get(self._package_index(package_name))
         if request.status_code == 404:
             raise StopIteration()
@@ -97,19 +81,20 @@ class Repository(object):
             basename = link.firstChild.data
             parsed = self._parse_basename(basename)
             if parsed and parsed['package_name'] == package_name:
-                yield DistributionLink(
-                    url=urlparse.urljoin(self._package_index(package_name),
-                        link.attributes['href'].value),
-                    md5_digest=self._md5_anchor(link.attributes['href'].value),
-                    version=parsed['version'],
-                    basename=basename,
-                )
+                if not versions or parsed['version'] in versions:
+                    yield DistributionLink(
+                        url=urlparse.urljoin(self._package_index(package_name),
+                            link.attributes['href'].value),
+                        md5_digest=self._md5_anchor(link.attributes['href'].value),
+                        version=parsed['version'],
+                        basename=basename,
+                    )
 
     def package_names(self):
         """ Return a list of every package available in this repo """
         if not self._package_names:
-            request = self.get(self._simple_url())
-            dom = parseString(request.content)
+            response = self.get(self._simple_url())
+            dom = parseString(response.content)
             self._package_names = [e.firstChild.data for e in dom.getElementsByTagName('a')]
         return self._package_names
 
