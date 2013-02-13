@@ -71,7 +71,7 @@ class Sync(object):
                 yield sv
 
     def sync(self):
-        for package_name, required_versions in self._package_list().iteritems():
+        for package_name, required_versions in sorted(self._package_list().items(), key=lambda i: i[0]):
             self.ui.report('Checking required versions for %s...' % package_name)
             dist_links = list(self.distribution_links(package_name, required_versions))
             if not dist_links:
