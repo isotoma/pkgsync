@@ -51,7 +51,7 @@ class Repository(object):
         )
 
     def _parse_basename(self, basename):
-        parser = re.compile(r'^(?P<package_name>.*)-(?P<version>.*)(?P<extension>\.zip|\.tgz|\.tar\.gz)$')
+        parser = re.compile(r'^(?P<package_name>.*)-(?P<version>.*)(?P<extension>\.zip|\.tgz|\.tar\.gz|\.tar\.bz2)$')
         r = parser.search(basename)
         if r:
             return r.groupdict()
