@@ -4,7 +4,7 @@ import sys
 from .sync import Sync
 from .repo import Repository
 from .status import StatusReporter
-from .util import dictify_package_list
+from .versions import Versions
 
 from optparse import OptionParser
 
@@ -50,6 +50,12 @@ def parse_options():
         help='Will prompt if --destination-username is provided and this option is not',
     )
 
+    parser.add_option(
+        '--from-versions-file', dest='versions_file',
+        help='Synchronise names and versions from a cfg file with a [versions] ' \
+             'section. Intended for use with buildout configurations.'
+    )
+
     options, args = parser.parse_args()
 
     required = ('destination_url', 'destination_username')
@@ -82,12 +88,17 @@ def main():
 
     if options.all_packages:
         ui.report('Synchronising all packages...')
+        include_versions = Versions()
+    elif options.versions_file:
+        ui.report('Synchronising packages from %s' % options.versions_file)
+        include_versions = Versions.from_uri(options.versions_file)
     else:
         ui.report('Synchronising packages: %r...' % args)
+        include_versions = Versions.from_names(args)
 
     sync = Sync(
         source, destination, ui=ui,
-        exclude=dictify_package_list(options.exclude),
-        include=dictify_package_list(args),
+        exclude=Versions.from_names(options.exclude),
+        include=include_versions,
     )
     sync.sync()
