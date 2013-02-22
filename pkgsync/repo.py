@@ -44,7 +44,7 @@ class Repository(object):
             self.simple_prefix,
         )
 
-    def _package_index(self, package_name):
+    def package_index(self, package_name):
         return '%s/%s/' % (
             self._simple_url(),
             package_name,
@@ -76,7 +76,7 @@ class Repository(object):
         return where
 
     def download_links(self, package_name, versions=()):
-        request = self.get(self._package_index(package_name))
+        request = self.get(self.package_index(package_name))
         if request.status_code == 404:
             raise StopIteration()
         dom = parseString(request.content)
@@ -86,7 +86,7 @@ class Repository(object):
             if parsed and parsed['package_name'] == package_name:
                 if not versions or parsed['version'] in versions:
                     yield DistributionLink(
-                        url=urlparse.urljoin(self._package_index(package_name),
+                        url=urlparse.urljoin(self.package_index(package_name),
                             link.attributes['href'].value),
                         md5_digest=self._md5_anchor(link.attributes['href'].value),
                         version=parsed['version'],
