@@ -19,6 +19,9 @@ setup(
         'requests',
         'setuptools',
     ],
+    extras_require={
+        'test': ['unittest2', 'mock'],
+    },
     entry_points='''
     [console_scripts]
     pkgsync = pkgsync:main
