@@ -12,7 +12,7 @@ def parse_options():
     parser = OptionParser(
         usage='%prog --destination-url=https://eggsample.com ' \
               '--destination-username=youruser ' \
-              '[package another==1.2 another==2.3|--all]'
+              '[package another==1.2 \'another<2.3,>1.2.4\'|--all-packages]'
     )
     parser.add_option(
         '-a', '--all-packages', dest='all_packages', action='store_true',
