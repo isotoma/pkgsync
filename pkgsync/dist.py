@@ -3,13 +3,18 @@ from hashlib import md5
 
 import pkginfo
 
-from .meta import Metadata
+from .meta import Metadata, OldStyleMetadata
+from .exceptions import InvalidDistribution
 
 class Distribution(object):
 
     def __init__(self, path):
         self.path = path
-        self.meta = Metadata(self)
+        try:
+            self.meta = Metadata(self)
+        except InvalidDistribution:
+            self.meta = OldStyleMetadata(self)
+
         self._content = None
         self._md5_digest = None
 

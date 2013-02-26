@@ -48,7 +48,6 @@ class Metadata(object):
         }
 
     def register(self):
-        """ Build a dictionary suitable for a distutils register request """
         return {
             ':action': 'submit',
             'metadata_version' : self._meta.metadata_version,
@@ -67,4 +66,52 @@ class Metadata(object):
             'provides': self._meta.provides,
             'requires': self._meta.requires,
             'obsoletes': self._meta.obsoletes,
+        }
+
+class OldStyleMetadata(object):
+
+    parser = re.compile('^([A-Za-z]+)-(\d+\.\d+).tgz$')
+
+    def __init__(self, dist):
+        self.dist = dist
+        self._name, self._version = self._parse_basename()
+
+    def _parse_basename(self):
+        try:
+            return self.parser.match(self.dist.basename).groups()
+        except IndexError:
+            raise InvalidDistribution(self.dist.path)
+
+    def upload(self):
+        return {
+            ':action': 'file_upload',
+            'protocol_version': '1',
+            'name': self._name,
+            'version': self._version,
+            'filetype': 'sdist',
+            'pyversion': '',
+            'md5_digest': self.dist.md5_digest,
+            'content': (self.dist.basename, self.dist.content),
+        }
+
+    def register(self):
+        """ Build a dictionary suitable for a distutils register request """
+        return {
+            ':action': 'submit',
+            'metadata_version' : '1.0', # lies
+            'name': self._name,
+            'version': self._version,
+            'summary': 'UNKNOWN',
+            'home_page': 'UNKNOWN',
+            'author': 'UNKNOWN',
+            'author_email': 'UNKNOWN',
+            'license': 'UNKNOWN',
+            'description': 'UNKNOWN',
+            'keywords': [],
+            'platform': ['UNKNOWN'],
+            'classifiers': (),
+            'download_url': 'UNKNOWN',
+            'provides': (),
+            'requires': (),
+            'obsoletes': (),
         }
