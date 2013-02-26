@@ -70,7 +70,7 @@ class Metadata(object):
 
 class OldStyleMetadata(object):
 
-    parser = re.compile('^([A-Za-z]+)-(\d+\.\d+).tgz$')
+    parser = re.compile('^([A-Za-z]+)-(\d+(.\d+)+)*.(tgz|tar.gz)$')
 
     def __init__(self, dist):
         self.dist = dist
@@ -78,7 +78,7 @@ class OldStyleMetadata(object):
 
     def _parse_basename(self):
         try:
-            return self.parser.match(self.dist.basename).groups()
+            return self.parser.match(self.dist.basename).groups()[:2]
         except IndexError:
             raise InvalidDistribution(self.dist.path)
 
