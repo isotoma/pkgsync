@@ -50,11 +50,11 @@ class Repository(object):
             package_name,
         )
 
-    def _parse_basename(self, basename):
+    def _parse_basename(self, basename, package_name):
         if basename.endswith('.egg'):
-            parser = re.compile(r'^(?P<package_name>.*)-(?P<version>.*)(-)(?P<pyversion>py[\d\.]+)(?P<extension>\.egg)$')
+            parser = re.compile(r'^(?P<package_name>%s)-(?P<version>.*)(-)(?P<pyversion>py[\d\.]+)(?P<extension>\.egg)$' % package_name)
         else:
-            parser = re.compile(r'^(?P<package_name>.*)-(?P<version>.*)(?P<extension>\.zip|\.tgz|\.tar\.gz|\.tar\.bz2)$')
+            parser = re.compile(r'^(?P<package_name>%s)-(?P<version>.*)(?P<extension>\.zip|\.tgz|\.tar\.gz|\.tar\.bz2)$' % package_name)
         r = parser.search(basename)
         if r:
             return r.groupdict()
@@ -82,7 +82,7 @@ class Repository(object):
         dom = parseString(request.content)
         for link in dom.getElementsByTagName('a'):
             basename = link.firstChild.data
-            parsed = self._parse_basename(basename)
+            parsed = self._parse_basename(basename, package_name)
             if parsed and parsed['package_name'] == package_name:
                 if not versions or parsed['version'] in versions:
                     yield DistributionLink(
