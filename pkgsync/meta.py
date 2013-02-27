@@ -70,7 +70,7 @@ class Metadata(object):
 
 class OldStyleMetadata(object):
 
-    parser = re.compile('^([A-Za-z]+)-(\d+(.\d+)+)*.(tgz|tar.gz)$')
+    parser = re.compile('^([A-Za-z]+)-(.*)\.(tgz|tar\.gz)$')
 
     def __init__(self, dist):
         self.dist = dist
