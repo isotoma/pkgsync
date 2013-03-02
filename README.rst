@@ -34,6 +34,14 @@ Password-Protected Repositories
 Supports upload and download authentication just in case you have a password-
 protected private repository to copy from/to.
 
+Old-Style Packages
+------------------
+
+Very naively support for old-style packages - packages without any setuptools
+metadata in them. For these packages, we attempt to use the filename to
+determine the package name and release, then register the package using
+the value 'UNKNOWN' for all the other setuptools metadata (as per the spec).
+
 Usage
 =====
 
