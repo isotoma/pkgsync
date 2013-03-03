@@ -14,7 +14,7 @@ class LocalConfigFetcher(ConfigFetcher):
 
     def fetch(self):
         if self.uri.startswith('file://'):
-            self.uri = self.uri[:7]
+            self.uri = self.uri[7:]
 
         if os.path.exists(self.uri):
             try:
