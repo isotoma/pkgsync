@@ -4,6 +4,10 @@ import pkginfo
 from .exceptions import InvalidDistribution
 
 class Metadata(object):
+    """An adapter around pkginfo with better support for classifiers and
+    keywords. Also crucially adds upload and register methods for creating a
+    distutils-compatible representation of the package suitable for upload to a
+    python distribution repository"""
 
     def __init__(self, dist):
         self.dist = dist
@@ -69,6 +73,13 @@ class Metadata(object):
         }
 
 class OldStyleMetadata(object):
+    """ A pretend metadata parser for old distributions that you want to upload
+    to your distribution repository, but that lack the crucial setuptools
+    PKG-INFO metadata.
+
+    This very simply splits the filename into a package name and version, which
+    are then provided via the upload and register dictionaries along with every
+    other metadata attribute filled in with 'UNKNOWN' data."""
 
     parser = re.compile('^([A-Za-z]+)-(.*)\.(tgz|tar\.gz)$')
 
