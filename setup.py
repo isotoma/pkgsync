@@ -15,7 +15,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'pkginfo',
+        'pkginfo>=0.9.1,<=1.0',
         'requests',
         'setuptools',
     ],
