@@ -6,7 +6,7 @@ def long_description():
 
 setup(
     name='pkgsync',
-    version='0.1.0',
+    version='0.2.0dev',
     author='Alex Holmes',
     author_email='alex.holmes@isotoma.com',
     description='Synchronise packages between two python software repositories',

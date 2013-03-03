@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.2.0 (unreleased)
+------------------
+
+- Significant api changes moving towards a proper stable release
+- Considerably more documentation in the form of rst-enhanced docstrings.
+- Repository class now has significantly fewer methods
+- Versions is now simply a series of helper classmethods applied to a subclass
+  of ``set``.
+- Gone from zero unit test-coverage to almost full unit test-coverage.
+
 0.1.0 (2013-03-02)
 ------------------
 
