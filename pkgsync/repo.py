@@ -6,15 +6,17 @@ import requests
 
 from .exceptions import InvalidRemoteDistribution
 from .remote import RemoteDistribution
+from .upload import Uploader
 
 class Repository(object):
 
-    def __init__(self, uri, username=None, password=None, simple_prefix='simple'):
+    def __init__(self, uri, username=None, password=None, simple_prefix='simple', uploader=Uploader):
         """
         :param uri: Repository URL. Lolz.
         :param username: Username for http authentication
         :param password: Password for http authentication
         :param simple_prefix: The path under which packages are listed.
+        :param uploader: `Uploader` or a class that implements its public methods.
         """
         self.username = username
         self.password = password
@@ -23,6 +25,8 @@ class Repository(object):
 
         self.uri = uri
         self.simple_prefix = 'simple'
+
+        self.uploader = uploader(self)
 
         self._package_names = []
 
@@ -109,6 +113,20 @@ class Repository(object):
             dom = parseString(response.content)
             self._package_names = [e.firstChild.data for e in dom.getElementsByTagName('a')]
         return self._package_names
+
+    def register(self, distribution):
+        """ Register the given distribution to this package repository
+
+        :param distribution: A `Distribution` object
+        """
+        return self.uploader.register(distribution)
+
+    def upload(self, distribution):
+        """ Upload the given distribution to this package repository
+
+        :param distribution: A `Distribution` object
+        """
+        return self.uploader.upload(distribution)
 
     @property
     def upload_url(self):

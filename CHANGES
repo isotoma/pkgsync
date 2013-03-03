@@ -10,6 +10,17 @@ Changelog
 - Versions is now simply a series of helper classmethods applied to a subclass
   of ``set``.
 - Gone from zero unit test-coverage to almost full unit test-coverage.
+- Uploader is still used, but can upload as many distributions as necessary via
+  the repository class meaning the upload/register api is now simply::
+
+    r = Repository('http://url.com')
+    d = Distribution('/path/to/package-1.2.3.tgz')
+    r.register(d)
+    r.upload(d)
+
+  where the uploader used can be swapped out if necessary by passing a
+  different Uploader class to the Repository when it is instantiated.
+
 
 0.1.0 (2013-03-02)
 ------------------
