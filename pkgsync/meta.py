@@ -74,20 +74,20 @@ class OldStyleMetadata(object):
 
     def __init__(self, dist):
         self.dist = dist
-        self._name, self._version = self._parse_basename()
+        self.name, self.version = self._parse_basename()
 
     def _parse_basename(self):
         try:
             return self.parser.match(self.dist.basename).groups()[:2]
-        except IndexError:
+        except (IndexError, AttributeError):
             raise InvalidDistribution(self.dist.path)
 
     def upload(self):
         return {
             ':action': 'file_upload',
             'protocol_version': '1',
-            'name': self._name,
-            'version': self._version,
+            'name': self.name,
+            'version': self.version,
             'filetype': 'sdist',
             'pyversion': '',
             'md5_digest': self.dist.md5_digest,
@@ -99,8 +99,8 @@ class OldStyleMetadata(object):
         return {
             ':action': 'submit',
             'metadata_version' : '1.0', # lies
-            'name': self._name,
-            'version': self._version,
+            'name': self.name,
+            'version': self.version,
             'summary': 'UNKNOWN',
             'home_page': 'UNKNOWN',
             'author': 'UNKNOWN',
