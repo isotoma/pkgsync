@@ -1,6 +1,6 @@
 import os
 import mock
-from unittest2 import TestCase
+from unittest import TestCase, skip
 
 from pkgsync.meta import Metadata, OldStyleMetadata
 from pkgsync.exceptions import InvalidDistribution
@@ -103,7 +103,9 @@ class MetadataTest(TestCase):
         })
 
     def test_register(self):
-        distribution = mock.Mock(path=self.asset_path('somefakepackage-0.0.0.tar.gz'))
+        distribution = mock.Mock(
+            path=self.asset_path('somefakepackage-0.0.0.tar.gz')
+        )
         metadata = Metadata(distribution)
         self.assertEqual(metadata.register(), {
             ':action': 'submit',
@@ -124,3 +126,36 @@ class MetadataTest(TestCase):
             'summary': u'Package description',
             'version': u'0.0.0'
         })
+
+    def test_classifiers_egg(self):
+        distribution = mock.Mock(path=self.asset_path('packagewithclassifiers-0.0.0-py2.7.egg'),)
+        metadata = Metadata(distribution)
+        self.assertEqual(metadata.register()['classifiers'], [
+            u'Development Status :: 5 - Production/Stable',
+            u'License :: OSI Approved :: BSD License',
+            u'Operating System :: OS Independent',
+            u'Programming Language :: Python',
+            u'Programming Language :: Python :: 2.6',
+            u'Programming Language :: Python :: 2.7',
+            u'Topic :: Software Development :: Libraries :: Python Modules'
+        ])
+
+    def test_classifiers_sdist(self):
+        distribution = mock.Mock(path=self.asset_path('packagewithclassifiers-0.0.0.tar.gz'),)
+        metadata = Metadata(distribution)
+        self.assertEqual(metadata.register()['classifiers'], [
+            u'Development Status :: 5 - Production/Stable',
+            u'License :: OSI Approved :: BSD License',
+            u'Operating System :: OS Independent',
+            u'Programming Language :: Python',
+            u'Programming Language :: Python :: 2.6',
+            u'Programming Language :: Python :: 2.7',
+            u'Topic :: Software Development :: Libraries :: Python Modules'
+        ])
+
+    def test_keywords(self):
+        distribution = mock.Mock(path=self.asset_path('packagewithkeywords-0.0.0.tar.gz'),)
+        metadata = Metadata(distribution)
+        self.assertEqual(metadata.register()['keywords'], [
+            u'testing', u'space', u'separated', u'keywords'
+        ])
