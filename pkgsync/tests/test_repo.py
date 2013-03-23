@@ -100,3 +100,27 @@ class RepoTestCase(TestCase):
         dists = list(repo.distributions('pkgsync>=0.0.0', latest=True))
         self.assertEqual(len(dists), 1)
         self.assertEqual(dists[0].version, '0.0.1')
+
+    def test_spec_distributions_exclude(self):
+        package_page = mock.Mock(content=self.pkgsync_links)
+        self.requests.get.return_value = package_page
+        repo = Repository('https://pypi.python.org')
+
+        dists = list(repo.distributions('pkgsync>=0.0.0', exclude=['pkgsync==0.0.1']))
+        self.assertEqual(len(dists), 1)
+
+    def test_spec_distributions_all(self):
+        package_page = mock.Mock(content=self.pkgsync_links)
+        self.requests.get.return_value = package_page
+        repo = Repository('https://pypi.python.org')
+
+        dists = list(repo.distributions('pkgsync<0.0.1', exclude=['pkgsync==0.0.0']))
+        self.assertEqual(len(dists), 0)
+
+    def test_spec_exclude_entire_package(self):
+        package_page = mock.Mock(content=self.pkgsync_links)
+        self.requests.get.return_value = package_page
+        repo = Repository('https://pypi.python.org')
+
+        dists = list(repo.distributions('pkgsync<0.0.1', exclude=['pkgsync']))
+        self.assertEqual(len(dists), 0)

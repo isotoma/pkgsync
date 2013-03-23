@@ -7,6 +7,7 @@ import requests
 from .exceptions import InvalidRemoteDistribution
 from .remote import RemoteDistribution
 from .upload import Uploader
+from .versions import Versions
 
 class Repository(object):
 
@@ -83,10 +84,13 @@ class Repository(object):
             except InvalidRemoteDistribution:
                 continue # ignore the link and move on
 
-    def distributions(self, spec, latest=False):
+    def distributions(self, spec, exclude=[], latest=False):
         """
         :param spec: A specification string describing one or more package
             releases, such as "pkgsync>0.1.0,<0.3.0" or "pkgsync==0.1.0".
+        :param exclude: One or more specification strings describing
+            releases all with the same package name, which should not be
+            returned as RemoteDistribution objects.
         :return: yields `RemoteDistribution` objects for each distribution
             matching the given release specification.
         """
@@ -104,7 +108,13 @@ class Repository(object):
 
         for remote_dist in all_dists:
             if remote_dist.version in parsed_spec:
-                yield remote_dist
+                if exclude:
+                    for ex_spec in exclude:
+                        parsed_ex = pkg_resources.Requirement.parse(ex_spec)
+                        if not remote_dist.version in parsed_ex:
+                            yield remote_dist
+                else:
+                    yield remote_dist
 
     def packages(self):
         """ :return: A list of the name of every package in this repo """
