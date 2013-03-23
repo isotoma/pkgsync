@@ -43,3 +43,17 @@ class VersionsTest(TestCase):
         Versions.config_fetchers = []
         with self.assertRaises(RuntimeError):
             Versions.from_uri('')
+
+    def test_specs_for(self):
+        versions = Versions(['foo<1.2.3', 'bar<1.2.3'])
+        specs_for = versions.specs_for('foo')
+        self.assertEquals(specs_for.next(), 'foo<1.2.3')
+        with self.assertRaises(StopIteration):
+            specs_for.next()
+
+    def test_multiple_specs_for(self):
+        versions = Versions(['foo<1.2.3', 'foo<1.2.4'])
+        specs_for = list(versions.specs_for('foo'))
+        self.assertEquals(len(specs_for), 2)
+        self.assertTrue('foo<1.2.3' in specs_for)
+        self.assertTrue('foo<1.2.4' in specs_for)

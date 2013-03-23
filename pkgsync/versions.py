@@ -69,3 +69,10 @@ class Versions(set):
     def all_packages(cls, repository):
         versions = repository.packages()
         return cls(versions)
+
+    def specs_for(self, package_name):
+        """Yield the specs which refer to the given package name"""
+        for spec in self:
+            spec_as_req = pkg_resources.Requirement.parse(spec)
+            if spec_as_req.project_name == package_name:
+                yield spec
