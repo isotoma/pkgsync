@@ -20,7 +20,7 @@ Changelog
 
   where the uploader used can be swapped out if necessary by passing a
   different Uploader class to the Repository when it is instantiated.
-
+- Added a using the library section to the documentation
 
 0.1.0 (2013-03-02)
 ------------------
