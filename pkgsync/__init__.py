@@ -98,16 +98,16 @@ def main():
         include_versions = Versions.all_packages(source)
     elif options.versions_file:
         ui.report('Synchronising packages from %s' % options.versions_file)
-        include_versions = Versions.from_uri(options.versions_file, source)
+        include_versions = Versions.from_uri(options.versions_file)
     else:
         ui.report('Synchronising packages: %r...' % args)
-        include_versions = Versions(args, source)
+        include_versions = Versions(args)
 
     include_versions.latest = options.latest
 
     sync = Sync(
         source, destination, ui=ui,
-        exclude=Versions(options.exclude, source),
+        exclude=Versions(options.exclude),
         include=include_versions,
     )
     sync.sync()
