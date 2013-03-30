@@ -40,3 +40,6 @@ class Distribution(object):
         if not self._md5_digest:
             self._calculate_digest()
         return self._md5_digest
+
+    def __repr__(self):
+        return '<Distribution: %s>' % self.path
