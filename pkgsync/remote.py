@@ -88,3 +88,13 @@ class RemoteDistribution(object):
         for attr in attrs:
             r += '%s=%r, ' % (attr, getattr(self, attr))
         return r.rstrip(', ') + ')'
+
+    @staticmethod
+    def diff(a, b):
+        """
+        :param a: a list or tuple of RemoteDistribution objects
+        :param b: another list/tuple of RemoteDistribution objects
+        :return: a list of RemoteDistribution objects required to make b match a
+        """
+        b_basenames = [d.basename for d in b]
+        return [d for d in a if not d.basename in b_basenames]
