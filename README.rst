@@ -113,7 +113,7 @@ Register and upload new distributions::
     (200, 'OK')
 
     >> pypi.upload(distribution)
-    (200, 'OK')
+    (200, '\nUpload accepted.\n')
 
 AND MUCH, MUCH MORE.
 

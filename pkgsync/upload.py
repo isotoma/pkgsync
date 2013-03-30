@@ -70,7 +70,10 @@ class Uploader(object):
             result = opener.open(req)
         except urllib2.HTTPError, e:
             if self.show_response:
-                data = e.fp.read()
+                if e.fp:
+                    data = e.fp.read()
+                else:
+                    data = ''
             result = e.code, e.msg
         except urllib2.URLError, e:
             result = 500, str(e)
@@ -143,4 +146,4 @@ class Uploader(object):
             return
 
         r = http.getresponse()
-        return r.status
+        return r

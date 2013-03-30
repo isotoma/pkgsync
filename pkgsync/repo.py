@@ -129,14 +129,20 @@ class Repository(object):
 
         :param distribution: A `Distribution` object
         """
-        return self.uploader.register(distribution)
+        status_code, content = self.uploader.register(distribution)
+        if status_code == 401:
+            raise RuntimeError('Incorrect username/password for %s' % self.upload_url)
+        return status_code, content
 
     def upload(self, distribution):
         """ Upload the given distribution to this package repository
 
         :param distribution: A `Distribution` object
         """
-        return self.uploader.upload(distribution)
+        response = self.uploader.upload(distribution)
+        if response.status == 401:
+            raise RuntimeError('Incorrect username/password for %s' % self.upload_url)
+        return response.status, response.read()
 
     @property
     def upload_url(self):
