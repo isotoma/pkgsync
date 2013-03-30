@@ -1,10 +1,12 @@
 import os
 import sys
 import collections
+import pkg_resources
 from .dist import Distribution
 from .upload import Uploader
 from .exceptions import InvalidDistribution
 from .status import NothingReporter
+from .remote import RemoteDistribution
 
 class Sync(object):
 
@@ -40,33 +42,24 @@ class Sync(object):
         except OSError, IOError:
             return False
 
-    def _dists_for_download(self, package_name):
-        for dist_link in self.include[package_name]:
-
-            if dist_link in self.exclude.get(package_name, []):
-                continue
-            if self.destination.has_package(package_name, dist_link.version):
-                continue
-
-            yield dist_link
-
-    def _sync_distribution(self, dist_link):
+    def sync_distribution(self, dist_link):
         self.ui.report('version %s:' % dist_link.version, level=1)
         self.ui.inline('fetching...')
-        downloaded_dist = self.source.fetch(dist_link, save_to=self.tmp_dir)
         try:
-            distribution = Distribution(downloaded_dist)
-            uploader = Uploader(self.destination, distribution)
+            distribution = dist_link.download(save_to=self.tmp_dir)
             self.ui.inline('registering...')
-            uploader.register()
+            self.destination.register(distribution)
             self.ui.inline('uploading...')
-            uploader.upload()
+            self.destination.upload(distribution)
+            cleaned = self._cleanup(distribution.path)
+            if not cleaned:
+                self.ui.inline('cannot remove %s ' % downloaded_dist)
         except InvalidDistribution, e:
             self.ui.error('Cannot parse metadata from %s' % e.args[0])
 
-        cleaned = self._cleanup(downloaded_dist)
-        if not cleaned:
-            self.ui.inline('cannot remove %s ' % downloaded_dist)
+    def _package_name(self, spec):
+        parsed = pkg_resources.Requirement.parse(spec)
+        return parsed.project_name
 
     def sync(self):
         """
@@ -75,10 +68,19 @@ class Sync(object):
         objects generated synchronise the package to the self.destination
         repository, if the file does not already exist there.
         """
-        for package_name in sorted(self.include.keys()):
-
+        for spec in sorted(self.include):
+            package_name = self._package_name(spec)
             self.ui.report('Checking required versions for %s...' % package_name)
-            to_sync = list(self._dists_for_download(package_name))
+
+            exclude = list(self.exclude.specs_for(package_name))
+
+            source_distributions = self.source.distributions(spec, exclude=exclude)
+            if source_distributions:
+                destination_distributions = self.destination.distributions(spec, exclude=exclude)
+                to_sync = RemoteDistribution.diff(source_distributions, destination_distributions)
+            else: # save making an unnecessary request to the destination repo
+                to_sync = []
+
             if not to_sync:
                 self.ui.inline('up to date.')
                 continue
@@ -86,4 +88,4 @@ class Sync(object):
             self.ui.inline('%s required' % ', '.join([v.version for v in to_sync]))
 
             for dist_link in to_sync:
-                self._sync_distribution(dist_link)
+                self.sync_distribution(dist_link)
