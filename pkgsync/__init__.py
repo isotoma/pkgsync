@@ -12,7 +12,7 @@ def parse_options():
     parser = OptionParser(
         usage='%prog --destination-url=https://eggsample.com ' \
               '--destination-username=youruser ' \
-              '[package another==1.2 another==2.3|--all]'
+              '[package another==1.2 \'another<2.3,>1.2.4\'|--all-packages]'
     )
     parser.add_option(
         '-a', '--all-packages', dest='all_packages', action='store_true',
@@ -56,6 +56,13 @@ def parse_options():
              'section. Intended for use with buildout configurations.'
     )
 
+    parser.add_option(
+        '--latest', dest='latest', action='store_true', default=False,
+        help='Only synchronise the latest (highest) version available within a ' \
+             'package specification, e.g. if you specify Django>1.4,<1.5 and ' \
+             '1.4.3, 1.4.4 and 1.4.5 are available, only 1.4.5 is synchronised',
+    )
+
     options, args = parser.parse_args()
 
     required = ('destination_url', 'destination_username')
@@ -88,17 +95,19 @@ def main():
 
     if options.all_packages:
         ui.report('Synchronising all packages...')
-        include_versions = Versions()
+        include_versions = Versions.all_packages(source)
     elif options.versions_file:
         ui.report('Synchronising packages from %s' % options.versions_file)
         include_versions = Versions.from_uri(options.versions_file)
     else:
         ui.report('Synchronising packages: %r...' % args)
-        include_versions = Versions.from_names(args)
+        include_versions = Versions(args)
+
+    include_versions.latest = options.latest
 
     sync = Sync(
         source, destination, ui=ui,
-        exclude=Versions.from_names(options.exclude),
+        exclude=Versions(options.exclude),
         include=include_versions,
     )
     sync.sync()

@@ -1,105 +1,52 @@
-import os
-import requests
-from UserDict import IterableUserDict
+import pkg_resources
 from ConfigParser import RawConfigParser, NoOptionError, NoSectionError
+from UserDict import IterableUserDict
 
-from .util import FileLikeResponseAdapter, name_version
+from .cfg import LocalConfigFetcher, HttpConfigFetcher
+from .util import name_version
 
+class Versions(set):
+    """ A set of release specifications that can be instantiated from a uri to
+    a buildout-style `ConfigParser` cfg file, from a `Repository`, or by the
+    can just be instantiated with a list of release specifications, such as::
 
-class ConfigFetcher(object):
-
-    def __init__(self, uri, *args, **kwargs):
-        self.uri = uri
-
-    def fetch(self):
-        raise NotImplementedError()
-
-class LocalConfigFetcher(ConfigFetcher):
-
-    def fetch(self):
-        if self.uri.startswith('file://'):
-            self.uri = self.uri[:7]
-
-        if os.path.exists(self.uri):
-            try:
-                return open(self.uri, 'r')
-            except OSError, IOError:
-                pass
-
-
-class HttpConfigFetcher(ConfigFetcher):
-
-    def __init__(self, uri, username=None, password=None, **kwargs):
-        self.uri = uri
-        self.username = username
-        self.password = password
-        self.request_kwargs = kwargs
-
-    def fetch(self):
-        if self.uri.startswith('http://') or self.uri.startswith('https://'):
-            return self._get()
-
-    def _get(self):
-        if self.username and self.password:
-            self.request_kwargs.setdefault('auth', (self.username, self.password))
-        self.request_kwargs.setdefault('stream', True)
-        response = requests.get(self.uri, **self.request_kwargs)
-        if response.status_code == 401:
-            raise RuntimeError('Incorrect username/password for %s' % self.uri)
-        response.raise_for_status()
-        return FileLikeResponseAdapter(response)
-
-
-class Versions(IterableUserDict):
+        Versions(['Django>1.4.1,<1.5', 'django-logtail', 'South>=0.7.5'])
+    """
 
     config_fetchers = [
         LocalConfigFetcher,
         HttpConfigFetcher,
     ]
 
-    def __init__(self, versions={}, **kwargs):
-        IterableUserDict.__init__(self, dict=versions, **kwargs)
-
     @classmethod
     def from_uri(cls, uri, **kwargs):
         """
-        The URI of a cfg file containing package names and versions in the
-        following form::
+        :param uri: The URI of a cfg file containing package names and versions
+            in the following form (the cfg file can also contain other stanzas)::
 
-            [versions]
-            iw.fss = 2.7.1
-            zkaffold = 0.0.8
-            zc.buildout = 1.4.3
+                [versions]
+                iw.fss = 2.7.1
+                zkaffold = 0.0.8
+                zc.buildout = 1.4.3
         """
         for fetcher in cls.config_fetchers:
             fp = fetcher(uri, **kwargs).fetch()
             if fp:
-                return cls.from_fp(fp)
+                return cls.from_cfg_fp(fp)
 
         raise RuntimeError('Unrecognised versions.cfg URI %s' % uri)
 
     @classmethod
-    def from_names(cls, names_list):
+    def from_cfg_fp(cls, fp):
         """
-        Take a list of package names, optionally with version numbers, e.g.
+        Generate a versions specification from a file-like object containing
+        buildout cfg-style versions tuples
 
-            >> dictify_package_list(['foo', 'bar==1.2.3', 'bar==1.2.4', 'quux'])
-            {'foo': [], 'bar': ['1.2.3', '1.2.4'], 'quux': []}
+        :param fp: A file-like object (specifically requires ``.readline()``)
+        :returns: An instantiated `Versions` object.
         """
-        package_versions = {}
-
-        for dist_spec in names_list:
-            name, version = name_version(dist_spec)
-            if not name in package_versions:
-                package_versions[name] = []
-            if version and not version in package_versions[name]:
-                package_versions[name].append(version)
-
-        return cls(package_versions)
-
-    @classmethod
-    def from_fp(cls, fp):
         config = RawConfigParser()
+        config.optionxform = str # incantation to make keys case-sensitive
         config.readfp(fp)
 
         try:
@@ -110,9 +57,22 @@ class Versions(IterableUserDict):
         if not config.has_section(versions_name):
             raise RuntimeError('No versions section')
 
-        versions_dict = {}
+        versions = []
 
         for package_name in config.options(versions_name):
-            versions_dict[package_name] = config.get(versions_name, package_name)
+            version = config.get(versions_name, package_name)
+            versions.append('%s==%s' % (package_name, version))
 
-        return cls(versions_dict)
+        return cls(versions)
+
+    @classmethod
+    def all_packages(cls, repository):
+        versions = repository.packages()
+        return cls(versions)
+
+    def specs_for(self, package_name):
+        """Yield the specs which refer to the given package name"""
+        for spec in self:
+            spec_as_req = pkg_resources.Requirement.parse(spec)
+            if spec_as_req.project_name == package_name:
+                yield spec

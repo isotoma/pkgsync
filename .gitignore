@@ -1,0 +1,9 @@
+.installed.cfg
+bin/
+develop-eggs/
+eggs/
+parts/
+pkgsync.egg-info/
+*.swp
+*.pyc
+*.pyo

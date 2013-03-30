@@ -5,13 +5,16 @@ pkgsync
 Overview
 ========
 
-pkgsync is a tool used to move python packages from one repository to another.
-Say, for example you use a pypi-clone application such as `chishop
-<https://github.com/ask/chishop>`_ and you want to synchronise some packages
-from pypi to it, or you have multiple pypi clone applications, etc.
+pkgsync is two things: a command line utility for copying python packages from
+one repository to another, ensuring that all distributions on the source repo
+are present on the distribution repo. Secondly, pkgsync can also be used as a
+library for registering, uploading, and downloading distributions from python
+package repositories.
 
-This makes sure that all the versions of some package on repository A are
-copied to repository B if they don't already exist on B.
+The primary use-case for the utility is if, for example, you use a pypi-clone
+application such as `chishop <https://github.com/ask/chishop>`_ and you want to
+synchronise some packages from pypi to it, or you have multiple pypi clone
+applications that you wish to keep synchronised, etc.
 
 Benefits
 --------
@@ -61,6 +64,58 @@ Full repository sync::
 
     pkgsync --source-url=https://eggsample.com --destination-url=https://newrepo.com --destination-username=youruser --all
 
+Using the Library
+=================
+
+You can see which distributions are available on a given repository, and filter
+them using the typical setup.py requirement specification format::
+
+    >> from pkgsync.repo import Repository
+    >> pypi = Repository('https://pypi.python.org')
+
+    >> celery_dists = pypi.distributions('celery>=3.0.15')
+
+    >> remote_distribution = celery_dists.next()
+    >> remote_distribution.version
+    u'3.0.15'
+    >> remote_distribution.md5_digest
+    u'5ac83d2cdcacf230897d9bffcf0ddbd9'
+
+You can download any of the RemoteDistribution objects you wish::
+
+    >> local_distribution = remote_distribution.download()
+    >> local_distribution
+    <Distribution: /tmp/celery-3.0.15.tar.gz>
+
+View the metadata for Distributions::
+
+    >> from pkgsync.dist import Distribution
+    >> local_distribution = Distribution('/tmp/celery-3.0.15.tar.gz')
+
+    >> local_distribution.meta.summary
+    u'Distributed Task Queue'
+
+    >> local_distribution.meta.classifiers[0]
+    u'Development Status :: 5 - Production/Stable'
+
+    >> local_distribution.meta.version
+    u'3.0.15'
+
+Register and upload new distributions::
+
+    >> from pkgsync.repo import Repository
+    >> from pkgsync.dist import Distribution
+
+    >> distribution = Distribution('/tmp/loldongs-1.2.3.tar.gz')
+    >> pypi = Repository('https://pypi.python.org', username='monty', password='farcicalaquaticceremony')
+
+    >> pypi.register(distribution)
+    (200, 'OK')
+
+    >> pypi.upload(distribution)
+    (200, '\nUpload accepted.\n')
+
+AND MUCH, MUCH MORE.
 
 Development Instructions
 ========================

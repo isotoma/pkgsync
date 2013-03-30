@@ -1,0 +1,110 @@
+from pkgsync.remote import RemoteDistribution
+from unittest2 import TestCase
+import tempfile
+import shutil
+import mock
+import os
+
+class RemoteDistributionTest(TestCase):
+
+    def setUp(self):
+        self.dirs = []
+        self.empty_tgz = "\x1f\x8b\x08\x00\xd7\x8f2Q\x02\xff\xed\xc1\x01\r\x00\x00\x00\xc2\xa0\xf7Om\x0e7\xa0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x807\x03\x9a\xde\x1d'\x00(\x00\x00"
+        self.empty_digest = "94e4358a3df99f5b7b288b2352b6667b"
+
+    def mock_repo(self):
+        repo = mock.Mock()
+        repo.package_index.return_value = 'https://example.com/simple/pkgsync/'
+        mock_response = mock.Mock(content=self.empty_tgz)
+        repo.get.return_value = mock_response
+        return repo
+
+    def cleanUp(self):
+        for d in self.dirs:
+            shutil.rmtree(d)
+
+    def test_tgz_attributes(self):
+        rd = RemoteDistribution(
+            self.mock_repo(),
+            '../../packages/source/p/pkgsync/pkgsync-0.1.0.tar.gz#md5=c264ffd778c274561842237d6253427a',
+            'pkgsync'
+        )
+        self.assertEqual(rd.basename, 'pkgsync-0.1.0.tar.gz')
+        self.assertEqual(rd.version, '0.1.0')
+        self.assertEqual(rd.extension, '.tar.gz')
+        self.assertEqual(rd.md5_digest, 'c264ffd778c274561842237d6253427a')
+        self.assertEqual(rd.url, 'https://example.com/packages/source/p/pkgsync/pkgsync-0.1.0.tar.gz#md5=c264ffd778c274561842237d6253427a')
+
+    def test_egg_attributes(self):
+        rd = RemoteDistribution(
+            self.mock_repo(),
+            '../../packages/2.7/p/pkgsync/pkgsync-0.1.0-py2.7.egg#md5=ee6fbb8ee50e9b9d1bda8df6428090ca',
+            'pkgsync',
+        )
+        self.assertEqual(rd.basename, 'pkgsync-0.1.0-py2.7.egg')
+        self.assertEqual(rd.version, '0.1.0')
+        self.assertEqual(rd.extension, '.egg')
+        self.assertEqual(rd.md5_digest, 'ee6fbb8ee50e9b9d1bda8df6428090ca')
+        self.assertEqual(rd.url, 'https://example.com/packages/2.7/p/pkgsync/pkgsync-0.1.0-py2.7.egg#md5=ee6fbb8ee50e9b9d1bda8df6428090ca')
+
+    def test_no_md5(self):
+        rd = RemoteDistribution(
+            self.mock_repo(),
+            '../../packages/2.7/p/pkgsync/pkgsync-0.1.0-py2.7.egg',
+            'pkgsync',
+        )
+        self.assertEqual(rd.md5_digest, None)
+
+    def test_download(self):
+        test_dir = tempfile.mkdtemp()
+        self.dirs.append(test_dir)
+        rd = RemoteDistribution(
+            self.mock_repo(),
+            '../../packages/source/p/pkgsync/pkgsync-0.1.0.tar.gz#md5=%s' % self.empty_digest,
+            'pkgsync',
+        )
+        dist = rd.download(save_to=test_dir)
+        downloaded_file_path = os.path.join(test_dir, 'pkgsync-0.1.0.tar.gz')
+        self.assertTrue(os.path.isfile(downloaded_file_path))
+        self.assertEqual(dist.path, downloaded_file_path)
+
+    def test_empty_diff(self):
+        self.assertEqual(RemoteDistribution.diff([], []), [])
+
+    def test_empty_a(self):
+        distribution = RemoteDistribution(
+            self.mock_repo(),
+            '../../packages/source/p/pkgsync/pkgsync-0.1.0.tar.gz#md5=%s' % self.empty_digest,
+            'pkgsync',
+        )
+        self.assertEqual(RemoteDistribution.diff([], [distribution]), [])
+
+    def test_empty_b(self):
+        distribution = RemoteDistribution(
+            self.mock_repo(),
+            '../../packages/source/p/pkgsync/pkgsync-0.1.0.tar.gz#md5=%s' % self.empty_digest,
+            'pkgsync',
+        )
+        self.assertEqual(RemoteDistribution.diff([distribution], []), [distribution])
+
+    def test_up_to_date(self):
+        distribution = RemoteDistribution(
+            self.mock_repo(),
+            '../../packages/source/p/pkgsync/pkgsync-0.1.0.tar.gz#md5=%s' % self.empty_digest,
+            'pkgsync',
+        )
+        self.assertEqual(RemoteDistribution.diff([distribution], [distribution]), [])
+
+    def test_tgz_and_zip(self):
+        repo = self.mock_repo()
+        tgz_d = RemoteDistribution(
+            repo,
+            '../../packages/source/p/pkgsync/pkgsync-0.1.0.tar.gz#md5=%s' % self.empty_digest,
+            'pkgsync',
+        )
+        zip_d = RemoteDistribution(
+            repo,
+            '../../packages/source/p/pkgsync/pkgsync-0.1.0.zip#md5=%s' % self.empty_digest,
+            'pkgsync',
+        )
+        self.assertEqual(RemoteDistribution.diff([zip_d, tgz_d], [tgz_d]), [zip_d])

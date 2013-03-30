@@ -6,7 +6,7 @@ def long_description():
 
 setup(
     name='pkgsync',
-    version='0.1.0',
+    version='0.2.0dev',
     author='Alex Holmes',
     author_email='alex.holmes@isotoma.com',
     description='Synchronise packages between two python software repositories',
@@ -15,10 +15,13 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'pkginfo',
+        'pkginfo>=0.9.1,<=1.0',
         'requests',
         'setuptools',
     ],
+    extras_require={
+        'test': ['unittest2', 'mock'],
+    },
     entry_points='''
     [console_scripts]
     pkgsync = pkgsync:main

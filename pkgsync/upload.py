@@ -11,19 +11,18 @@ class Uploader(object):
     that, which means no use of requests. It's back to basics, people, and a
     lot of code copied from distutils/setuptools """
 
-    def __init__(self, repository, distribution):
+    def __init__(self, repository):
         self.repository = repository
-        self.distribution = distribution
         self.show_response = True
 
-    def register(self):
+    def register(self, distribution):
         return self._post_registration(
-            self.distribution.meta.register(),
+            distribution.meta.register(),
             self.repository.as_password_manager()
         )
 
-    def upload(self):
-        return self._post_upload(self.distribution.meta.upload())
+    def upload(self, distribution):
+        return self._post_upload(distribution.meta.upload())
 
     def _post_registration(self, data, auth=None):
         # Build up the MIME payload for the urllib2 POST data
@@ -71,7 +70,10 @@ class Uploader(object):
             result = opener.open(req)
         except urllib2.HTTPError, e:
             if self.show_response:
-                data = e.fp.read()
+                if e.fp:
+                    data = e.fp.read()
+                else:
+                    data = ''
             result = e.code, e.msg
         except urllib2.URLError, e:
             result = 500, str(e)
@@ -144,4 +146,4 @@ class Uploader(object):
             return
 
         r = http.getresponse()
-        return r.status
+        return r

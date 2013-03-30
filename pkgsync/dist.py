@@ -1,8 +1,6 @@
 import os
 from hashlib import md5
 
-import pkginfo
-
 from .meta import Metadata, OldStyleMetadata
 from .exceptions import InvalidDistribution
 
@@ -24,6 +22,7 @@ class Distribution(object):
         f.close()
 
     def _calculate_digest(self):
+        """ Don't iterate over chunks because it's already in mem to upload """
         self._md5_digest = md5(self.content).hexdigest()
 
     @property
@@ -42,4 +41,5 @@ class Distribution(object):
             self._calculate_digest()
         return self._md5_digest
 
-
+    def __repr__(self):
+        return '<Distribution: %s>' % self.path
